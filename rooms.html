@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grand Meridian Hotel | Rooms</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="brand">Grand <span>Meridian</span></div>
+  <nav class="site-nav">
+    <a href="index.html">Home</a>
+    <a href="rooms.html" class="active">Rooms</a>
+    <a href="food.html">Food</a>
+    <a href="cart.html">Cart</a>
+    <a href="reports.html">Reports</a>
+  </nav>
+</header>
+
+<main>
+  <h1>Choose a room</h1>
+  <p style="font-family:Arial, sans-serif; color:var(--muted);">Select a room type below, then fill in your stay details to add it to your cart.</p>
+
+  <div class="grid grid-3" id="room-list"></div>
+
+  <div class="section-title">
+    <h2>Booking details</h2>
+  </div>
+
+  <div class="card" style="max-width:480px;">
+    <form class="booking-form" id="booking-form">
+      <label for="guestName">Guest name</label>
+      <input type="text" id="guestName" required placeholder="Full name">
+
+      <label for="roomType">Selected room</label>
+      <select id="roomType" required></select>
+
+      <div class="grid grid-2" style="gap:14px;">
+        <div>
+          <label for="checkIn">Check-in</label>
+          <input type="date" id="checkIn" required>
+        </div>
+        <div>
+          <label for="checkOut">Check-out</label>
+          <input type="date" id="checkOut" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Add Room to Cart</button>
+    </form>
+  </div>
+</main>
+
+<footer class="site-footer">Grand Meridian Hotel &mdash; Hotel Management System (BCA Major Project Demo)</footer>
+
+<script src="js/storage.js"></script>
+<script>
+  const ROOMS = [
+    { id: 'single', name: 'Single Room', price: 1800, desc: 'Cozy single-bed room, ideal for solo travelers.' },
+    { id: 'deluxe', name: 'Deluxe Room', price: 3200, desc: 'Spacious room with city view and a king bed.' },
+    { id: 'suite',  name: 'Suite',       price: 5500, desc: 'Separate living area, premium amenities, best view.' }
+  ];
+
+  function renderRooms() {
+    const list = document.getElementById('room-list');
+    const select = document.getElementById('roomType');
+    list.innerHTML = ROOMS.map(r => `
+      <div class="card room-card">
+        <div class="body">
+          <div class="tag">${r.name}</div>
+          <p style="font-family:Arial, sans-serif; color:var(--muted); font-size:0.9rem;">${r.desc}</p>
+          <div class="price">${HMS.formatCurrency(r.price)} / night</div>
+        </div>
+      </div>
+    `).join('');
+    select.innerHTML = ROOMS.map(r => `<option value="${r.id}">${r.name} — ${HMS.formatCurrency(r.price)}/night</option>`).join('');
+  }
+
+  function nightsBetween(checkIn, checkOut) {
+    const inDate = new Date(checkIn);
+    const outDate = new Date(checkOut);
+    const diff = Math.round((outDate - inDate) / (1000 * 60 * 60 * 24));
+    return diff > 0 ? diff : 1;
+  }
+
+  document.getElementById('booking-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const guestName = document.getElementById('guestName').value.trim();
+    const roomId = document.getElementById('roomType').value;
+    const checkIn = document.getElementById('checkIn').value;
+    const checkOut = document.getElementById('checkOut').value;
+
+    if (!checkIn || !checkOut) { HMS.toast('Please select both dates'); return; }
+    const nights = nightsBetween(checkIn, checkOut);
+    const room = ROOMS.find(r => r.id === roomId);
+
+    const booking = {
+      guestName,
+      roomId: room.id,
+      roomName: room.name,
+      roomPrice: room.price,
+      checkIn,
+      checkOut,
+      nights,
+      roomTotal: room.price * nights
+    };
+
+    HMS.setBooking(booking);
+    HMS.toast('Room added — head to Cart to review your bill');
+  });
+
+  renderRooms();
+</script>
+</body>
+</html>

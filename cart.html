@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grand Meridian Hotel | Cart</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="brand">Grand <span>Meridian</span></div>
+  <nav class="site-nav">
+    <a href="index.html">Home</a>
+    <a href="rooms.html">Rooms</a>
+    <a href="food.html">Food</a>
+    <a href="cart.html" class="active">Cart</a>
+    <a href="reports.html">Reports</a>
+  </nav>
+</header>
+
+<main>
+  <h1>Your booking &amp; bill</h1>
+  <div id="cart-content"></div>
+</main>
+
+<footer class="site-footer">Grand Meridian Hotel &mdash; Hotel Management System (BCA Major Project Demo)</footer>
+
+<script src="js/storage.js"></script>
+<script>
+  function renderCart() {
+    const booking = HMS.getBooking();
+    const foodCart = HMS.getFoodCart();
+    const container = document.getElementById('cart-content');
+
+    if (!booking && foodCart.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <p>Your cart is empty. Book a room or add some food to get started.</p>
+          <a href="rooms.html" class="btn btn-primary">Browse Rooms</a>
+        </div>`;
+      return;
+    }
+
+    const foodTotal = foodCart.reduce((sum, item) => sum + item.price * item.qty, 0);
+    const roomTotal = booking ? booking.roomTotal : 0;
+    const grandTotal = roomTotal + foodTotal;
+
+    let roomRows = '';
+    if (booking) {
+      roomRows = `
+        <tr>
+          <td>${booking.roomName} &times; ${booking.nights} night(s)</td>
+          <td>${HMS.formatCurrency(booking.roomPrice)}</td>
+          <td>${booking.nights}</td>
+          <td>${HMS.formatCurrency(roomTotal)}</td>
+        </tr>`;
+    }
+
+    const foodRows = foodCart.map(item => `
+      <tr>
+        <td>${item.name}</td>
+        <td>${HMS.formatCurrency(item.price)}</td>
+        <td>${item.qty}</td>
+        <td>${HMS.formatCurrency(item.price * item.qty)}</td>
+      </tr>
+    `).join('');
+
+    container.innerHTML = `
+      ${booking ? `
+      <div class="card" style="margin-bottom:24px;">
+        <h3 style="margin-top:0;">Guest details</h3>
+        <p style="font-family:Arial, sans-serif; font-size:0.9rem; color:var(--muted); margin:4px 0;">
+          Guest: <strong style="color:var(--ink);">${booking.guestName || '—'}</strong><br>
+          Check-in: ${booking.checkIn} &nbsp;|&nbsp; Check-out: ${booking.checkOut}
+        </p>
+      </div>` : ''}
+
+      <div class="card">
+        <table class="summary-table">
+          <thead>
+            <tr><th>Item</th><th>Rate</th><th>Qty</th><th>Amount</th></tr>
+          </thead>
+          <tbody>
+            ${roomRows}
+            ${foodRows}
+            <tr class="total-row">
+              <td colspan="3">Grand Total</td>
+              <td>${HMS.formatCurrency(grandTotal)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:20px; display:flex; gap:12px;">
+        <button class="btn btn-primary" id="checkout-btn">Confirm &amp; Checkout</button>
+        <button class="btn btn-danger" id="clear-btn">Clear Cart</button>
+      </div>
+    `;
+
+    document.getElementById('checkout-btn').addEventListener('click', () => {
+      if (!booking) { HMS.toast('Add a room before checking out'); return; }
+      HMS.addToHistory({
+        guestName: booking.guestName,
+        roomName: booking.roomName,
+        checkIn: booking.checkIn,
+        checkOut: booking.checkOut,
+        nights: booking.nights,
+        roomTotal,
+        foodTotal,
+        grandTotal,
+        date: new Date().toISOString()
+      });
+      HMS.clearBooking();
+      HMS.clearFoodCart();
+      HMS.toast('Booking confirmed! Check Reports for your history.');
+      renderCart();
+    });
+
+    document.getElementById('clear-btn').addEventListener('click', () => {
+      HMS.clearBooking();
+      HMS.clearFoodCart();
+      renderCart();
+    });
+  }
+
+  renderCart();
+</script>
+</body>
+</html>

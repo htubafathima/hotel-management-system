@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grand Meridian Hotel | Food</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="brand">Grand <span>Meridian</span></div>
+  <nav class="site-nav">
+    <a href="index.html">Home</a>
+    <a href="rooms.html">Rooms</a>
+    <a href="food.html" class="active">Food</a>
+    <a href="cart.html">Cart</a>
+    <a href="reports.html">Reports</a>
+  </nav>
+</header>
+
+<main>
+  <h1>In-room dining</h1>
+  <p style="font-family:Arial, sans-serif; color:var(--muted);">Add items to your cart. Quantities update instantly and are saved to your booking.</p>
+
+  <div class="grid grid-3" id="food-list"></div>
+</main>
+
+<footer class="site-footer">Grand Meridian Hotel &mdash; Hotel Management System (BCA Major Project Demo)</footer>
+
+<script src="js/storage.js"></script>
+<script>
+  const MENU = [
+    { id: 'f1', name: 'Masala Dosa', price: 150 },
+    { id: 'f2', name: 'Paneer Butter Masala', price: 280 },
+    { id: 'f3', name: 'Veg Biryani', price: 240 },
+    { id: 'f4', name: 'Butter Naan', price: 60 },
+    { id: 'f5', name: 'Cold Coffee', price: 120 },
+    { id: 'f6', name: 'Fresh Fruit Bowl', price: 140 }
+  ];
+
+  function getQty(cart, id) {
+    const item = cart.find(i => i.id === id);
+    return item ? item.qty : 0;
+  }
+
+  function renderMenu() {
+    const cart = HMS.getFoodCart();
+    const list = document.getElementById('food-list');
+    list.innerHTML = MENU.map(item => {
+      const qty = getQty(cart, item.id);
+      return `
+        <div class="card food-card">
+          <div class="body">
+            <h3 style="margin:0 0 6px;">${item.name}</h3>
+            <div class="price">${HMS.formatCurrency(item.price)}</div>
+            <div class="qty-control" style="margin-top:12px;">
+              <button type="button" onclick="changeQty('${item.id}', -1)">-</button>
+              <span id="qty-${item.id}">${qty}</span>
+              <button type="button" onclick="changeQty('${item.id}', 1)">+</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function changeQty(id, delta) {
+    const cart = HMS.getFoodCart();
+    const menuItem = MENU.find(m => m.id === id);
+    let entry = cart.find(i => i.id === id);
+
+    if (!entry && delta > 0) {
+      entry = { id: menuItem.id, name: menuItem.name, price: menuItem.price, qty: 0 };
+      cart.push(entry);
+    }
+    if (entry) {
+      entry.qty = Math.max(0, entry.qty + delta);
+    }
+    const updated = cart.filter(i => i.qty > 0);
+    HMS.setFoodCart(updated);
+    document.getElementById(`qty-${id}`).textContent = getQty(updated, id);
+    if (delta > 0) HMS.toast(`${menuItem.name} added`);
+  }
+
+  renderMenu();
+</script>
+</body>
+</html>

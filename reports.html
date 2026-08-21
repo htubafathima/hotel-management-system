@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grand Meridian Hotel | Reports</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .bar-chart { display: flex; align-items: flex-end; gap: 14px; height: 220px; padding: 16px 8px 0; }
+  .bar-chart .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+  .bar-chart .bar { width: 100%; background: linear-gradient(180deg, var(--gold-light), var(--gold)); border-radius: 4px 4px 0 0; }
+  .bar-chart .bar-label { font-family: Arial, sans-serif; font-size: 0.75rem; color: var(--muted); margin-top: 8px; text-align: center; }
+  .stat-grid .card { text-align: center; }
+  .stat-value { font-size: 1.6rem; font-weight: 700; color: var(--navy); font-family: Arial, sans-serif; }
+  .stat-label { font-family: Arial, sans-serif; color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="brand">Grand <span>Meridian</span></div>
+  <nav class="site-nav">
+    <a href="index.html">Home</a>
+    <a href="rooms.html">Rooms</a>
+    <a href="food.html">Food</a>
+    <a href="cart.html">Cart</a>
+    <a href="reports.html" class="active">Reports</a>
+  </nav>
+</header>
+
+<main>
+  <h1>Reports dashboard</h1>
+  <p style="font-family:Arial, sans-serif; color:var(--muted);">Analytics generated from confirmed bookings stored in <code>bookingHistory</code>.</p>
+
+  <div id="report-content"></div>
+</main>
+
+<footer class="site-footer">Grand Meridian Hotel &mdash; Hotel Management System (BCA Major Project Demo)</footer>
+
+<script src="js/storage.js"></script>
+<script>
+  function renderReports() {
+    const history = HMS.getHistory();
+    const container = document.getElementById('report-content');
+
+    if (history.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <p>No bookings yet. Confirm a booking from the Cart page to see analytics here.</p>
+        </div>`;
+      return;
+    }
+
+    const totalRevenue = history.reduce((sum, h) => sum + h.grandTotal, 0);
+    const totalBookings = history.length;
+    const avgBooking = Math.round(totalRevenue / totalBookings);
+    const maxTotal = Math.max(...history.map(h => h.grandTotal));
+
+    const bars = history.map((h, i) => {
+      const heightPct = Math.max(6, Math.round((h.grandTotal / maxTotal) * 100));
+      return `
+        <div class="bar-wrap">
+          <div class="bar" style="height:${heightPct}%;" title="${HMS.formatCurrency(h.grandTotal)}"></div>
+          <div class="bar-label">Booking ${i + 1}<br>${HMS.formatCurrency(h.grandTotal)}</div>
+        </div>`;
+    }).join('');
+
+    const rows = history.map(h => `
+      <tr>
+        <td>${h.guestName || '—'}</td>
+        <td>${h.roomName}</td>
+        <td>${h.nights}</td>
+        <td>${HMS.formatCurrency(h.roomTotal)}</td>
+        <td>${HMS.formatCurrency(h.foodTotal)}</td>
+        <td>${HMS.formatCurrency(h.grandTotal)}</td>
+      </tr>
+    `).join('');
+
+    container.innerHTML = `
+      <div class="grid grid-3 stat-grid" style="margin-bottom:32px;">
+        <div class="card"><div class="stat-value">${totalBookings}</div><div class="stat-label">Total Bookings</div></div>
+        <div class="card"><div class="stat-value">${HMS.formatCurrency(totalRevenue)}</div><div class="stat-label">Total Revenue</div></div>
+        <div class="card"><div class="stat-value">${HMS.formatCurrency(avgBooking)}</div><div class="stat-label">Average Booking Value</div></div>
+      </div>
+
+      <div class="section-title"><h2>Revenue by booking</h2></div>
+      <div class="card">
+        <div class="bar-chart">${bars}</div>
+      </div>
+
+      <div class="section-title"><h2>Booking history</h2></div>
+      <div class="card">
+        <table class="summary-table">
+          <thead>
+            <tr><th>Guest</th><th>Room</th><th>Nights</th><th>Room Total</th><th>Food Total</th><th>Grand Total</th></tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  renderReports();
+</script>
+</body>
+</html>
